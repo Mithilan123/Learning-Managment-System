@@ -10,3 +10,13 @@ services:
         sync: false
       - key: PORT
         value: 10000
+
+  - type: web
+    name: lms-frontend
+    runtime: static
+    rootDir: .
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
