@@ -9,7 +9,7 @@ const quizQuestionSchema = new mongoose.Schema({
 
 const submissionSchema = new mongoose.Schema(
   {
-    student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    student: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     score: Number,
     totalPoints: Number,
     percentage: Number,
@@ -21,7 +21,7 @@ const submissionSchema = new mongoose.Schema(
 const quizSchema = new mongoose.Schema(
   {
     course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, unique: true },
-    title: { type: String, required: true },
+    title: { type: String, required: true, trim: true, default: "Course Quiz" },
     passingScore: { type: Number, default: 70 },
     questions: [quizQuestionSchema],
     submissions: [submissionSchema],

@@ -25,8 +25,8 @@ router.get("/:id", protect, async (req, res) => {
 
 router.post("/", protect, async (req, res) => {
   try {
-    if (req.user.role !== "instructor" && req.user.role !== "admin")
-      return res.status(403).json({ message: "Forbidden" });
+    const existing = await Course.findOne({ code: req.body.code });
+    if (existing) return res.status(200).json(existing);
     const course = await Course.create({ ...req.body, instructor: req.user._id });
     res.status(201).json(course);
   } catch (err) {

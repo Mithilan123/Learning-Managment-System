@@ -17,7 +17,6 @@ router.get("/:courseId", protect, async (req, res) => {
 
 router.post("/:courseId", protect, async (req, res) => {
   try {
-    if (req.user.role !== "student") return res.status(403).json({ message: "Forbidden" });
     const question = await Question.create({ course: req.params.courseId, text: req.body.text, askedBy: req.user._id });
     res.status(201).json(question);
   } catch (err) {

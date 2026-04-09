@@ -1,28 +1,23 @@
+import { BASE_URL } from '../../services/api';
 import './MaterialCard.css';
 
 const MaterialCard = ({ material }) => {
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'video':
-        return '🎥';
-      case 'pdf':
-        return '📄';
-      case 'code':
-        return '💻';
-      case 'link':
-        return '🔗';
-      default:
-        return '📝';
+      case 'video': return '🎥';
+      case 'pdf': return '📄';
+      case 'code': return '💻';
+      case 'link': return '🔗';
+      default: return '📝';
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const resolvedUrl = material.url?.startsWith('/uploads/')
+    ? `${BASE_URL}${material.url}`
+    : material.url;
 
   return (
     <div className="material-card">
@@ -46,7 +41,7 @@ const MaterialCard = ({ material }) => {
           {formatDate(material.createdAt)}
         </span>
         <a
-          href={material.url}
+          href={resolvedUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="material-link"
