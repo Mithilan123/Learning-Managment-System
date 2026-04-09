@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('lms_token');
     localStorage.removeItem('lms_user');
+    localStorage.removeItem('lms_course_id');
   };
 
   return (
