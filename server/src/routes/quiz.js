@@ -17,10 +17,11 @@ router.get("/:courseId", protect, async (req, res) => {
 router.post("/:courseId", protect, async (req, res) => {
   try {
     if (req.user.role !== "instructor") return res.status(403).json({ message: "Forbidden" });
+    const { title, passingScore, questions } = req.body;
     const quiz = await Quiz.findOneAndUpdate(
       { course: req.params.courseId },
-      { ...req.body, course: req.params.courseId },
-      { upsert: true, new: true }
+      { title, passingScore, questions, course: req.params.courseId },
+      { upsert: true, new: true, runValidators: true }
     );
     res.json(quiz);
   } catch (err) {
@@ -30,18 +31,17 @@ router.post("/:courseId", protect, async (req, res) => {
 
 router.post("/:courseId/submit", protect, async (req, res) => {
   try {
-    if (req.user.role !== "student") return res.status(403).json({ message: "Forbidden" });
     const quiz = await Quiz.findOne({ course: req.params.courseId });
     if (!quiz?.questions?.length) return res.status(404).json({ message: "Quiz not available" });
 
     const { answers } = req.body;
     let score = 0;
-    const totalPoints = quiz.questions.reduce((acc, q) => acc + q.points, 0);
+    const totalPoints = quiz.questions.reduce((acc, q) => acc + (q.points || 1), 0);
     quiz.questions.forEach((q) => {
-      if (answers[String(q._id)] === q.correctAnswer) score += q.points;
+      if (answers[String(q._id)] === q.correctAnswer) score += (q.points || 1);
     });
-    const percentage = Math.round((score / totalPoints) * 100);
-    const passed = percentage >= quiz.passingScore;
+    const percentage = totalPoints ? Math.round((score / totalPoints) * 100) : 0;
+    const passed = percentage >= (quiz.passingScore || 70);
 
     quiz.submissions.push({ student: req.user._id, score, totalPoints, percentage, passed });
     await quiz.save();
