@@ -3,6 +3,8 @@ import { courseAPI } from '../services/api';
 
 const CourseContext = createContext(null);
 
+const DEFAULT_COURSE_CODE = 'fullstack-001';
+
 export const useCourse = () => {
   const context = useContext(CourseContext);
   if (!context) throw new Error('useCourse must be used within a CourseProvider');
@@ -16,40 +18,59 @@ export const CourseProvider = ({ children }) => {
   const [quiz, setQuiz] = useState(null);
 
   const fetchCourse = useCallback(async () => {
-    const data = await courseAPI.getCourse();
-    setCourse(data);
-    setMaterials(data.materials || []);
-    setQuestions(data.questions || []);
-    setQuiz(data.quiz || null);
+    let courses = await courseAPI.getCourses();
+
+    // create default course if none exists
+    if (!courses.length) {
+      const created = await courseAPI.createCourse({
+        code: DEFAULT_COURSE_CODE,
+        title: 'Full Stack Web Development',
+        description: 'Complete course covering frontend and backend technologies',
+      });
+      courses = [created];
+    }
+
+    const c = courses[0];
+    setCourse(c);
+    localStorage.setItem('lms_course_id', c._id);
+
+    const [mats, qs, q] = await Promise.allSettled([
+      courseAPI.getMaterials(c._id),
+      courseAPI.getQuestions(c._id),
+      courseAPI.getQuiz(c._id),
+    ]);
+
+    setMaterials(mats.status === 'fulfilled' ? mats.value : []);
+    setQuestions(qs.status === 'fulfilled' ? qs.value : []);
+    setQuiz(q.status === 'fulfilled' ? q.value : null);
   }, []);
 
-  const addMaterial = async (material) => {
-    const newMaterial = await courseAPI.addMaterial(material);
+  const getCourseId = () => course?._id || localStorage.getItem('lms_course_id');
+
+  const addMaterial = async (data) => {
+    const newMaterial = await courseAPI.addMaterial(getCourseId(), data);
     setMaterials((prev) => [...prev, newMaterial]);
   };
 
   const addQuestion = async (text) => {
-    const newQuestion = await courseAPI.addQuestion(text);
+    const newQuestion = await courseAPI.addQuestion(getCourseId(), text);
     setQuestions((prev) => [...prev, newQuestion]);
   };
 
   const addAnswer = async (questionId, text) => {
-    const newAnswer = await courseAPI.addAnswer(questionId, text);
+    const updated = await courseAPI.addAnswer(questionId, text);
     setQuestions((prev) =>
-      prev.map((q) =>
-        q._id === questionId ? { ...q, answers: [...q.answers, newAnswer] } : q
-      )
+      prev.map((q) => (q._id === questionId ? updated : q))
     );
   };
 
   const updateQuiz = async (quizData) => {
-    const updated = await courseAPI.saveQuiz(quizData);
+    const updated = await courseAPI.saveQuiz(getCourseId(), quizData);
     setQuiz(updated);
   };
 
   const submitQuizAnswer = async (answers) => {
-    const result = await courseAPI.submitQuiz(answers);
-    return result;
+    return await courseAPI.submitQuiz(getCourseId(), answers);
   };
 
   return (
